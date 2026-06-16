@@ -1,0 +1,4 @@
+interface:
+  display_name: "Push To GitHub"
+  short_description: "Decide when code is ready to push"
+  default_prompt: "Use $github-push-when-ready to decide whether this repository is ready to commit and push to GitHub, then push it if it is safe."
