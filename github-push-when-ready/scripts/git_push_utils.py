@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shlex
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 CONFLICT_CODES = {"DD", "AU", "UD", "UA", "DU", "AA", "UU"}
+AUTO_PUSH_SKIP_ENV = "CODEX_GITHUB_AUTO_PUSH_SKIP"
 
 
 @dataclass
@@ -24,11 +26,12 @@ class GitError(RuntimeError):
     pass
 
 
-def run_git(repo: Path, *args: str) -> GitResult:
+def run_git(repo: Path, *args: str, env: Mapping[str, str] | None = None) -> GitResult:
     completed = subprocess.run(
         ["git", "-C", str(repo), *args],
         check=False,
         capture_output=True,
+        env=None if env is None else {**os.environ, **env},
         text=True,
     )
     return GitResult(
@@ -38,8 +41,8 @@ def run_git(repo: Path, *args: str) -> GitResult:
     )
 
 
-def run_git_or_raise(repo: Path, *args: str) -> str:
-    result = run_git(repo, *args)
+def run_git_or_raise(repo: Path, *args: str, env: Mapping[str, str] | None = None) -> str:
+    result = run_git(repo, *args, env=env)
     if result.returncode != 0:
         command = shlex.join(["git", "-C", str(repo), *args])
         detail = result.stderr or result.stdout or "git command failed"
@@ -61,6 +64,26 @@ def parse_remote_urls(raw: str) -> dict[str, dict[str, str]]:
             continue
         name, url, direction = match.groups()
         remotes.setdefault(name, {})[direction] = url
+    return remotes
+
+
+def load_remote_urls(repo: Path) -> dict[str, dict[str, str]]:
+    remotes = parse_remote_urls(run_git_or_raise(repo, "remote", "-v"))
+    remote_names = run_git(repo, "remote")
+    if remote_names.returncode != 0:
+        return remotes
+
+    for name in [line.strip() for line in remote_names.stdout.splitlines() if line.strip()]:
+        fetch_url = run_git(repo, "config", "--get", f"remote.{name}.url")
+        if fetch_url.returncode == 0 and fetch_url.stdout:
+            remotes.setdefault(name, {})["fetch"] = fetch_url.stdout
+
+        push_url = run_git(repo, "config", "--get", f"remote.{name}.pushurl")
+        if push_url.returncode == 0 and push_url.stdout:
+            remotes.setdefault(name, {})["push"] = push_url.stdout
+        elif fetch_url.returncode == 0 and fetch_url.stdout:
+            remotes.setdefault(name, {})["push"] = fetch_url.stdout
+
     return remotes
 
 
@@ -97,7 +120,8 @@ def parse_branch(branch_line: str) -> tuple[str | None, bool]:
     if not branch_line:
         return None, False
     if branch_line.startswith("No commits yet on "):
-        return branch_line.removeprefix("No commits yet on "), False
+        branch_line = branch_line.removeprefix("No commits yet on ")
+        return branch_line.split("...", 1)[0], False
     head = branch_line.split("...", 1)[0]
     if head.startswith("HEAD "):
         return None, True
@@ -166,7 +190,7 @@ def assess_repo(repo_path: str | Path) -> dict[str, Any]:
             behind = int(behind_count)
             ahead = int(ahead_count)
 
-    remotes = parse_remote_urls(run_git_or_raise(repo, "remote", "-v"))
+    remotes = load_remote_urls(repo)
     github_remotes = {
         name: urls
         for name, urls in remotes.items()

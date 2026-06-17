@@ -6,7 +6,7 @@ import argparse
 import shlex
 from pathlib import Path
 
-from git_push_utils import GitError, assess_repo, run_git_or_raise
+from git_push_utils import AUTO_PUSH_SKIP_ENV, GitError, assess_repo, run_git_or_raise
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -135,7 +135,13 @@ def main() -> int:
                 run_git_or_raise(repo, "add", "--", *args.pathspec)
             else:
                 run_git_or_raise(repo, "add", "-A")
-            run_git_or_raise(repo, "commit", "-m", args.message or "")
+            run_git_or_raise(
+                repo,
+                "commit",
+                "-m",
+                args.message or "",
+                env={AUTO_PUSH_SKIP_ENV: "1"},
+            )
             created_commit = True
 
         if upstream:

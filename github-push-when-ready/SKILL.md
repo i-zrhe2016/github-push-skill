@@ -24,6 +24,14 @@ Interpret `recommended_action` like this:
 - `noop`: nothing needs to be pushed.
 - `sync_first`, `resolve_conflicts`, `manual_review`, `no_github_remote`, `not_git_repo`: do not push yet.
 
+To auto-check and auto-push after every new commit, install the managed `post-commit` hook:
+
+```bash
+python3 <skill-dir>/scripts/install_post_commit_hook.py --repo .
+```
+
+After that, each successful local commit triggers a fresh readiness check. The hook pushes only when the repo reaches the existing safe `push` state. It will not auto-commit leftover changes, and it will skip pushes when the branch is behind upstream, detached, conflicted, or missing a GitHub remote.
+
 ## Workflow
 
 1. Run `assess_push_readiness.py` in the target repo.
@@ -65,6 +73,18 @@ Behavior:
 - Require `--pathspec` or `--allow-stage-all` before creating a commit.
 - Push with `git push` when upstream exists.
 - Push with `git push -u <remote> <branch>` when upstream is missing.
+
+### `scripts/install_post_commit_hook.py`
+
+Installs a managed Git `post-commit` hook into the target repository. The hook calls `auto_push_post_commit.py` after every successful commit and exits cleanly even when the push is skipped.
+
+Use `--force` only when you intentionally want to replace an existing unmanaged `post-commit` hook. The installer writes a backup file before replacing it.
+
+### `scripts/auto_push_post_commit.py`
+
+Runs the same readiness assessment after each commit and pushes only when `recommended_action` is `push`. This keeps the automatic mode conservative: partial commits, unresolved conflicts, missing GitHub remotes, and branches that are behind upstream are all skipped instead of being forced through.
+
+Set `CODEX_GITHUB_AUTO_PUSH_SKIP=1` to bypass one hook invocation. `push_if_ready.py` sets this automatically for its own commit step so a scripted `commit_then_push` flow does not double-trigger the push.
 
 ## Response Pattern
 
