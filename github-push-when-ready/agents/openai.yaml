@@ -1,4 +1,4 @@
 interface:
   display_name: "Push To GitHub"
-  short_description: "Decide when code is ready to push"
-  default_prompt: "Use $github-push-when-ready to decide whether this repository is ready to commit and push to GitHub, then push it if it is safe."
+  short_description: "Guard every feature commit and GitHub push"
+  default_prompt: "Use $github-push-when-ready before committing or pushing. Split independent work into feature-scoped commits, validate each unit, and publish only when the repository is safe."

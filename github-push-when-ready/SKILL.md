@@ -1,6 +1,6 @@
 ---
 name: github-push-when-ready
-description: Assess whether a Git repository is ready to be committed and pushed to GitHub, then perform the guarded push workflow when it is safe. Use when Codex finishes a coherent unit of code work in a repo that may already be connected to GitHub, or when the user asks to ship, publish, sync, or push changes without pushing half-finished, conflicted, or unsynced work.
+description: Guard every Git commit and GitHub push by assessing repository readiness, splitting independent work into feature-scoped commits, and publishing only when safe. Use whenever Codex is about to commit or push, finishes a coherent unit of code work in a GitHub-connected repo, or is asked to ship, publish, or sync changes.
 ---
 
 # GitHub Push When Ready
@@ -8,6 +8,15 @@ description: Assess whether a Git repository is ready to be committed and pushed
 ## Overview
 
 Inspect the current repository, detect whether a GitHub remote is configured, and classify the repo as ready to push, ready to commit then push, or not ready. Prefer the bundled scripts for repeatable checks; only push after the task is complete, validations have passed, and the working tree changes belong to the task at hand.
+
+## Mandatory Use and Commit Boundaries
+
+- Invoke this skill before every action or script that will create a Git commit or push to GitHub. Do not run a direct `git commit`, `git push`, amend, or equivalent publishing workflow first and assess afterward.
+- Group changes by coherent user-visible feature, fix, refactor, or documentation-only task. When the worktree contains independent units, commit each unit separately.
+- Keep a feature's implementation, directly related tests, and documentation in the same commit when they form one atomic change. Do not split commits merely by file type.
+- Review the diff for each planned commit and stage only its paths or hunks. Prefer explicit `--pathspec` values; never use `--allow-stage-all` when unrelated or independently committable work is present.
+- Validate each functional unit before committing it. Re-run the readiness assessment before each subsequent commit or push because the repository state has changed.
+- Do not create empty commits or push again when the assessment returns `noop`.
 
 ## Quick Start
 
@@ -34,11 +43,13 @@ After that, each successful local commit triggers a fresh readiness check. The h
 
 ## Workflow
 
-1. Run `assess_push_readiness.py` in the target repo.
-2. Stop immediately if the repo is not a Git repo, has no GitHub remote, is on a detached HEAD, has conflicts, or is behind its upstream branch.
-3. Treat `commit_then_push` as eligible only when the task is complete, checks are green, and the changed files all belong to the current task.
-4. Treat `push` as eligible only when the working tree is clean and the local branch is ahead of its upstream or has no upstream yet.
-5. Use `push_if_ready.py --execute` for the standard guarded flow, or run the equivalent Git commands manually if the task requires a narrower staging set.
+1. Inspect `git status` and the relevant diff, then identify coherent functional commit boundaries.
+2. Run `assess_push_readiness.py` in the target repo before the first commit or push.
+3. Stop immediately if the repo is not a Git repo, has no GitHub remote, is on a detached HEAD, has conflicts, or is behind its upstream branch.
+4. Treat `commit_then_push` as eligible only when the current functional unit is complete, its checks are green, and the selected paths or hunks contain no unrelated work.
+5. Treat `push` as eligible only when the working tree is clean and the local branch is ahead of its upstream or has no upstream yet.
+6. Use `push_if_ready.py --execute` with explicit `--pathspec` values for the standard guarded flow. If one file mixes multiple functional units, stage only the intended hunks manually after assessment, then use the equivalent guarded commit and push commands.
+7. For another functional unit, re-inspect the remaining diff and restart this workflow from the readiness assessment.
 
 ## Push Rules
 
@@ -46,6 +57,7 @@ After that, each successful local commit triggers a fresh readiness check. The h
 - Refuse to push if the branch is behind upstream; rebase or pull first.
 - Refuse to force-push unless the user explicitly asks for it.
 - Refuse to auto-stage all changes when unrelated user work is mixed into the same worktree; ask before combining unrelated edits into one commit.
+- Refuse to combine independent features into one commit merely because they were completed in the same session.
 - Prefer `git push -u <remote> <branch>` when the branch has no upstream yet.
 - Prefer clear commit messages tied to the completed task boundary.
 

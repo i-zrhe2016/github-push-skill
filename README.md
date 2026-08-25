@@ -21,6 +21,8 @@ cp -a github-push-when-ready "${CODEX_HOME:-$HOME/.codex}/skills/"
 - Detect whether a GitHub remote is configured.
 - Block pushes when the branch is behind upstream, detached, or conflicted.
 - Distinguish between `push`, `commit_then_push`, and `noop`.
+- Require the skill's readiness check before every commit or GitHub push.
+- Split independent work into feature-scoped commits while keeping each feature's implementation, tests, and documentation atomic.
 - Require explicit `--pathspec` or `--allow-stage-all` before auto-committing changes.
 - Optionally install a `post-commit` hook that re-checks readiness and auto-pushes each new commit when it is safe.
 
