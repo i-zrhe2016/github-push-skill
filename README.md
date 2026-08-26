@@ -22,6 +22,7 @@ cp -a github-push-when-ready "${CODEX_HOME:-$HOME/.codex}/skills/"
 - Block pushes when the branch is behind upstream, detached, or conflicted.
 - Distinguish between `push`, `commit_then_push`, and `noop`.
 - Require the skill's readiness check before every commit or GitHub push.
+- Require new commit messages to follow Conventional Commits (`type(scope): description`).
 - Split independent work into feature-scoped commits while keeping each feature's implementation, tests, and documentation atomic.
 - Require explicit `--pathspec` or `--allow-stage-all` before auto-committing changes.
 - Optionally install a `post-commit` hook that re-checks readiness and auto-pushes each new commit when it is safe.
@@ -30,7 +31,7 @@ cp -a github-push-when-ready "${CODEX_HOME:-$HOME/.codex}/skills/"
 
 ```bash
 python3 github-push-when-ready/scripts/assess_push_readiness.py --json
-python3 github-push-when-ready/scripts/push_if_ready.py --message "Describe the task" --pathspec path/to/file --execute
+python3 github-push-when-ready/scripts/push_if_ready.py --message "feat(scope): describe the task" --pathspec path/to/file --execute
 python3 github-push-when-ready/scripts/install_post_commit_hook.py --repo .
 ```
 

@@ -3,10 +3,22 @@
 from __future__ import annotations
 
 import argparse
+import re
 import shlex
 from pathlib import Path
 
 from git_push_utils import AUTO_PUSH_SKIP_ENV, GitError, assess_repo, run_git_or_raise
+
+
+CONVENTIONAL_COMMIT_HEADER = re.compile(
+    r"^[a-z][a-z0-9-]*(?:\([^\r\n()]+\))?!?: \S(?:.*\S)?$"
+)
+
+
+def is_conventional_commit_message(message: str) -> bool:
+    """Return whether the first line follows the Conventional Commits header form."""
+    header = message.splitlines()[0] if message else ""
+    return bool(CONVENTIONAL_COMMIT_HEADER.fullmatch(header))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -20,7 +32,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--message",
-        help="Commit message to use when a commit is required.",
+        help=(
+            "Conventional Commit message to use when a commit is required "
+            '(for example, "feat(cli): add guarded push").'
+        ),
     )
     parser.add_argument(
         "--execute",
@@ -109,6 +124,17 @@ def main() -> int:
 
     if action == "commit_then_push" and not args.message and args.execute:
         print("commit message is required when execution would create a commit")
+        return 2
+
+    if (
+        action == "commit_then_push"
+        and args.message
+        and not is_conventional_commit_message(args.message)
+    ):
+        print(
+            "commit message must follow Conventional Commits: "
+            "<type>[optional scope][!]: <description>"
+        )
         return 2
 
     if action == "commit_then_push" and args.execute and not (args.allow_stage_all or args.pathspec):

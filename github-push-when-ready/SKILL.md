@@ -14,6 +14,7 @@ Inspect the current repository, detect whether a GitHub remote is configured, an
 - Invoke this skill before every action or script that will create a Git commit or push to GitHub. Do not run a direct `git commit`, `git push`, amend, or equivalent publishing workflow first and assess afterward.
 - Group changes by coherent user-visible feature, fix, refactor, or documentation-only task. When the worktree contains independent units, commit each unit separately.
 - Keep a feature's implementation, directly related tests, and documentation in the same commit when they form one atomic change. Do not split commits merely by file type.
+- Format every new commit message as Conventional Commits: `<type>[optional scope][!]: <description>`. Use a lowercase type such as `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, or `style`; add a scope only when it makes the affected area clearer. Mark breaking changes with `!` and explain them in the commit body or a `BREAKING CHANGE:` footer when useful.
 - Review the diff for each planned commit and stage only its paths or hunks. Prefer explicit `--pathspec` values; never use `--allow-stage-all` when unrelated or independently committable work is present.
 - Validate each functional unit before committing it. Re-run the readiness assessment before each subsequent commit or push because the repository state has changed.
 - Do not create empty commits or push again when the assessment returns `noop`.
@@ -73,7 +74,7 @@ Use this script after the repo is confirmed ready. It performs the guarded flow 
 
 ```bash
 python3 <skill-dir>/scripts/push_if_ready.py \
-  --message "Describe the completed task" \
+  --message "feat(scope): describe the completed task" \
   --pathspec path/to/file \
   --execute
 ```
@@ -82,6 +83,7 @@ Behavior:
 
 - Dry-run by default.
 - Commit only when the readiness check returns `commit_then_push`.
+- Reject commit messages whose first line does not follow the Conventional Commits header format.
 - Require `--pathspec` or `--allow-stage-all` before creating a commit.
 - Push with `git push` when upstream exists.
 - Push with `git push -u <remote> <branch>` when upstream is missing.
