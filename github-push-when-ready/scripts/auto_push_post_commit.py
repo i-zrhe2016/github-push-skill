@@ -6,6 +6,7 @@ import argparse
 import os
 from pathlib import Path
 
+from github_about import ensure_github_about
 from git_push_utils import AUTO_PUSH_SKIP_ENV, GitError, assess_repo, run_git_or_raise
 
 
@@ -53,6 +54,13 @@ def main() -> int:
         return 0
 
     try:
+        about = ensure_github_about(repo, str(remote))
+        if not about.ok:
+            emit(f"auto-push skipped: GitHub About check failed: {about.message}", args.quiet)
+            return 0
+        if about.changed:
+            emit(f"GitHub About updated: {about.description}", args.quiet)
+
         if upstream:
             run_git_or_raise(repo, "push")
         else:

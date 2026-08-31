@@ -1,4 +1,4 @@
 interface:
   display_name: "Push To GitHub"
-  short_description: "Guard every feature commit and GitHub push"
-  default_prompt: "Use $github-push-when-ready before committing or pushing. Split independent work into feature-scoped commits, validate each unit, and publish only when the repository is safe."
+  short_description: "Guard feature commits, About, and pushes"
+  default_prompt: "Use $github-push-when-ready before committing or pushing. Keep one feature per commit, validate each unit, complete and verify the GitHub repository About description, then publish only when the repository is safe."

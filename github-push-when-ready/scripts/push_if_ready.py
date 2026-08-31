@@ -7,6 +7,7 @@ import re
 import shlex
 from pathlib import Path
 
+from github_about import ensure_github_about
 from git_push_utils import AUTO_PUSH_SKIP_ENV, GitError, assess_repo, run_git_or_raise
 
 
@@ -52,6 +53,13 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         help="Pathspec to stage for the commit. Repeat as needed.",
+    )
+    parser.add_argument(
+        "--about-description",
+        help=(
+            "Description to use when the GitHub repository About is empty. "
+            "Defaults to the first prose paragraph in README."
+        ),
     )
     return parser
 
@@ -155,6 +163,13 @@ def main() -> int:
         return 2
 
     try:
+        about = ensure_github_about(repo, str(remote), args.about_description)
+        if not about.ok:
+            print(f"GitHub About check failed: {about.message}")
+            return 2
+        if about.changed:
+            print(f"GitHub About updated: {about.description}")
+
         created_commit = False
         if action == "commit_then_push":
             if args.pathspec:
