@@ -3,24 +3,15 @@
 from __future__ import annotations
 
 import argparse
-import re
 import shlex
 from pathlib import Path
 
+from conventional_commits import (
+    CONVENTIONAL_COMMIT_HEADER,
+    is_conventional_commit_message,
+)
 from github_about import ensure_github_about
 from git_push_utils import AUTO_PUSH_SKIP_ENV, GitError, assess_repo, run_git_or_raise
-
-
-CONVENTIONAL_COMMIT_HEADER = re.compile(
-    r"^[a-z][a-z0-9-]*(?:\([^\r\n()]+\))?!?: \S(?:.*\S)?$"
-)
-
-
-def is_conventional_commit_message(message: str) -> bool:
-    """Return whether the first line follows the Conventional Commits header form."""
-    header = message.splitlines()[0] if message else ""
-    return bool(CONVENTIONAL_COMMIT_HEADER.fullmatch(header))
-
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -140,7 +131,7 @@ def main() -> int:
         and not is_conventional_commit_message(args.message)
     ):
         print(
-            "commit message must follow Conventional Commits: "
+            "commit message must follow Conventional Commits 1.0.0: "
             "<type>[optional scope][!]: <description>"
         )
         return 2
