@@ -1,4 +1,4 @@
 interface:
-  display_name: "Push To GitHub"
-  short_description: "Enforce Conventional Commits and guarded pushes"
-  default_prompt: "Use $github-push-when-ready before committing or pushing. Enforce Conventional Commits 1.0.0 for every new commit, keep one feature per commit, validate each unit, complete and verify the GitHub repository About description, then publish only when the repository is safe."
+  display_name: "Commit, Push & PR"
+  short_description: "Guard commits, pushes, and pull requests"
+  default_prompt: "Use $github-push-when-ready to make one focused Conventional Commit, push its feature branch, and open one guarded pull request after the push."
